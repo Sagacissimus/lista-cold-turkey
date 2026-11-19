@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lista de bloqueo para Cold Turkey</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,700&display=swap">
+<style>
+  :root { --navy:#1F3A5F; --gold:#C9962B; --ink:#1A1A1A; --cream:#F4F1EA; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:'Source Sans 3','Helvetica Neue',Arial,sans-serif; font-size:20px; line-height:1.55; color:var(--ink); background:#fff; }
+  header { background:var(--navy); color:#fff; padding:36px 24px 30px; }
+  .wrap { max-width:760px; margin:0 auto; }
+  .kicker { font-size:14px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#E9C46A; }
+  h1 { font-family:'Source Serif 4',Georgia,serif; font-size:40px; line-height:1.1; margin:8px 0 10px; }
+  header p { margin:0; font-size:20px; }
+  main { padding:28px 24px 48px; }
+  h2 { font-family:'Source Serif 4',Georgia,serif; color:var(--navy); font-size:28px; margin:32px 0 12px; }
+  .box { border:1px solid #D5DBE3; border-top:4px solid var(--gold); border-radius:8px; padding:20px 22px; }
+  .buttons { display:flex; flex-wrap:wrap; gap:12px; margin-top:14px; }
+  button { font:inherit; font-weight:700; font-size:20px; border-radius:8px; padding:14px 22px; min-height:52px; cursor:pointer; border:2px solid var(--navy); }
+  .primary { background:var(--navy); color:#fff; }
+  .secondary { background:#fff; color:var(--navy); }
+  button:disabled { opacity:.55; cursor:default; }
+  #status { margin:12px 0 0; font-weight:600; min-height:1.5em; }
+  ol { padding-left:28px; margin:0; }
+  ol li { margin-bottom:12px; }
+  .menu { font-weight:700; color:var(--navy); white-space:nowrap; }
+  .note { background:var(--cream); border-radius:8px; padding:16px 20px; margin-top:28px; font-size:18px; }
+  .small { font-size:17px; color:#444; margin-top:28px; }
+  a { color:var(--navy); }
+  @media (max-width:520px){ h1{font-size:32px;} body{font-size:19px;} }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="kicker">Protección en internet · Cold Turkey</div>
+  <h1>Lista de bloqueo de sitios para adultos</h1>
+  <p>Unos <b id="count">18&nbsp;000</b> sitios, listos para añadir a Cold Turkey Blocker en Windows o Mac.</p>
+</div></header>
+<main class="wrap">
+  <section class="box" aria-labelledby="dl">
+    <h2 id="dl" style="margin-top:0">1 · Descargue la lista</h2>
+    <p style="margin:0">Hágalo desde la computadora donde tiene instalado Cold Turkey.</p>
+    <div class="buttons">
+      <button class="primary" id="save" type="button" disabled>Descargar el archivo (.txt)</button>
+      <button class="secondary" id="copy" type="button" disabled>Copiar la lista</button>
+    </div>
+    <p id="status" role="status"></p>
+  </section>
+
+  <h2>2 · Añádala a Cold Turkey</h2>
+  <ol>
+    <li>Abra <b>Cold Turkey Blocker</b> y vaya a la pestaña <span class="menu">Blocks</span>.</li>
+    <li>Cree un bloqueo nuevo (por ejemplo, «Contenido adulto») o abra uno que ya tenga para editarlo.</li>
+    <li>En la lista de sitios web, pulse <span class="menu">Import › Websites from file…</span> y elija el archivo <b>lista-cold-turkey.txt</b> que descargó.<br>
+      <span style="font-size:18px">¿Usó «Copiar la lista»? Pegue el texto directamente en la lista de sitios web del bloqueo.</span></li>
+    <li>Guarde, inicie el bloqueo y <b>active el candado</b> (<span class="menu">Lock</span>): así no podrá desactivarse antes de tiempo.</li>
+  </ol>
+
+  <div class="note">
+    <b>Actualícela cada pocos meses.</b> Cold Turkey no actualiza la lista por sí solo, y cada semana aparecen sitios nuevos. Esta página siempre ofrece la versión más reciente: descárguela de nuevo e impórtela en el mismo bloqueo. Si el bloqueo tiene el candado activado, tendrá que esperar a que termine para poder editarlo.
+  </div>
+  <div class="note">
+    <b>Consejo:</b> si nota que la computadora o el navegador se vuelven lentos, quite la lista y use solo las categorías propias de Cold Turkey. Ninguna lista es completa: combínela con un filtro como CleanBrowsing.
+  </div>
+
+  <p class="small">Fuente: lista «nsfw small» de <a href="https://oisd.nl">oisd.nl</a>, versión: <span id="ver">la más reciente</span>, distribuida bajo licencia <a href="https://github.com/sjhgvr/oisd/blob/main/LICENSE">GPL-3.0</a>. La lista original y su código están en <a href="https://github.com/sjhgvr/oisd">github.com/sjhgvr/oisd</a>. La lista se descarga directamente de la fuente en el momento de pulsar el botón; aquí solo se quitan las líneas de comentario.</p>
+</main>
+<script>
+(function () {
+  const SOURCE = 'https://raw.githubusercontent.com/sjhgvr/oisd/main/domainswild2_nsfw_small.txt';
+  const status = document.getElementById('status');
+  const saveBtn = document.getElementById('save');
+  const copyBtn = document.getElementById('copy');
+  let text = null;
+
+  function clean(raw) {
+    return raw.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith('#')).join('\n') + '\n';
+  }
+  function versionDate(raw) {
+    const m = raw.match(/^# Last modified:\s*(\d{4})-(\d{2})-(\d{2})/m);
+    if (!m) return null;
+    const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+    return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  }
+  async function load() {
+    try {
+      const r = await fetch(SOURCE, { cache: 'no-store' });
+      if (!r.ok) throw new Error('fuente');
+      const raw = await r.text();
+      const t = clean(raw);
+      if (t.split('\n').length < 5000) throw new Error('corta');
+      const v = versionDate(raw);
+      if (v) document.getElementById('ver').textContent = v;
+      return t;
+    } catch (e) {
+      const r = await fetch('./lista-cold-turkey.txt', { cache: 'no-store' });
+      if (!r.ok) throw new Error('respaldo');
+      document.getElementById('ver').textContent = 'la copia de respaldo de este sitio (se actualiza cada semana)';
+      return clean(await r.text());
+    }
+  }
+  const ready = load().then(t => {
+    text = t;
+    const n = t.split('\n').filter(Boolean).length;
+    document.getElementById('count').textContent = n.toLocaleString('es-MX');
+    saveBtn.disabled = false; copyBtn.disabled = false;
+  }).catch(() => { status.textContent = 'No se pudo cargar la lista. Recargue la página.'; });
+
+  saveBtn.addEventListener('click', async () => {
+    await ready; if (!text) return;
+    const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = 'lista-cold-turkey.txt';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    status.textContent = 'Descargado: lista-cold-turkey.txt (búsquelo en la carpeta Descargas).';
+  });
+  copyBtn.addEventListener('click', async () => {
+    await ready; if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      status.textContent = 'Lista copiada. Péguela en la lista de sitios web del bloqueo.';
+    } catch (e) { status.textContent = 'No se pudo copiar. Use el botón de descarga.'; }
+  });
+})();
+</script>
+</body>
+</html>
