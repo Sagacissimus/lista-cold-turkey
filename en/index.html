@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blocklist for Cold Turkey</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,700&display=swap">
+<style>
+  :root { --navy:#1F3A5F; --gold:#C9962B; --ink:#1A1A1A; --cream:#F4F1EA; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:'Source Sans 3','Helvetica Neue',Arial,sans-serif; font-size:20px; line-height:1.55; color:var(--ink); background:#fff; }
+  header { background:var(--navy); color:#fff; padding:36px 24px 30px; }
+  .wrap { max-width:760px; margin:0 auto; }
+  .kicker { font-size:14px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#E9C46A; }
+  h1 { font-family:'Source Serif 4',Georgia,serif; font-size:40px; line-height:1.1; margin:8px 0 10px; }
+  header p { margin:0; font-size:20px; }
+  main { padding:28px 24px 48px; }
+  h2 { font-family:'Source Serif 4',Georgia,serif; color:var(--navy); font-size:28px; margin:32px 0 12px; }
+  .box { border:1px solid #D5DBE3; border-top:4px solid var(--gold); border-radius:8px; padding:20px 22px; }
+  .buttons { display:flex; flex-wrap:wrap; gap:12px; margin-top:14px; }
+  button { font:inherit; font-weight:700; font-size:20px; border-radius:8px; padding:14px 22px; min-height:52px; cursor:pointer; border:2px solid var(--navy); }
+  .primary { background:var(--navy); color:#fff; }
+  .secondary { background:#fff; color:var(--navy); }
+  button:disabled { opacity:.55; cursor:default; }
+  #status { margin:12px 0 0; font-weight:600; min-height:1.5em; }
+  ol { padding-left:28px; margin:0; }
+  ol li { margin-bottom:12px; }
+  .menu { font-weight:700; color:var(--navy); white-space:nowrap; }
+  .note { background:var(--cream); border-radius:8px; padding:16px 20px; margin-top:28px; font-size:18px; }
+  .small { font-size:17px; color:#444; margin-top:28px; }
+  a { color:var(--navy); }
+  @media (max-width:520px){ h1{font-size:32px;} body{font-size:19px;} }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="kicker">Protection online · Cold Turkey</div>
+  <h1>Adult-site blocklist</h1>
+  <p>About <b id="count">18,000</b> sites, ready to add to Cold Turkey Blocker on Windows or Mac.</p>
+</div></header>
+<main class="wrap">
+  <section class="box" aria-labelledby="dl">
+    <h2 id="dl" style="margin-top:0">1 · Download the list</h2>
+    <p style="margin:0">Do this on the computer where Cold Turkey is installed.</p>
+    <div class="buttons">
+      <button class="primary" id="save" type="button" disabled>Download the file (.txt)</button>
+      <button class="secondary" id="copy" type="button" disabled>Copy the list</button>
+    </div>
+    <p id="status" role="status"></p>
+  </section>
+
+  <h2>2 · Add it to Cold Turkey</h2>
+  <ol>
+    <li>Open <b>Cold Turkey Blocker</b> and go to the <span class="menu">Blocks</span> tab.</li>
+    <li>Create a new block (for example, “Adult content”) or open an existing one to edit it.</li>
+    <li>In the list of websites, click <span class="menu">Import › Websites from file…</span> and choose the file <b>lista-cold-turkey.txt</b> you downloaded.<br>
+      <span style="font-size:18px">Used “Copy the list”? Paste the text straight into the block’s list of websites.</span></li>
+    <li>Save, start the block and <b>turn on the lock</b> (<span class="menu">Lock</span>) so it cannot be turned off early.</li>
+  </ol>
+
+  <div class="note">
+    <b>Update it every few months.</b> Cold Turkey does not update the list by itself, and new sites appear every week. This page always offers the latest version: download it again and import it into the same block. If the block is locked, you will have to wait until the lock ends before you can edit it.
+  </div>
+  <div class="note">
+    <b>Tip:</b> if the computer or browser becomes slow, remove the list and use only Cold Turkey’s own categories. No list is complete: combine it with a filter such as CleanBrowsing.
+  </div>
+
+  <p class="small">Source: the “nsfw small” list from <a href="https://oisd.nl">oisd.nl</a>, version: <span id="ver">the latest</span>, distributed under the <a href="https://github.com/sjhgvr/oisd/blob/main/LICENSE">GPL-3.0</a> licence. The original list and its code are at <a href="https://github.com/sjhgvr/oisd">github.com/sjhgvr/oisd</a>. The list is downloaded straight from the source when you click the button; only the comment lines are removed.</p>
+</main>
+<script>
+(function () {
+  const SOURCE = 'https://raw.githubusercontent.com/sjhgvr/oisd/main/domainswild2_nsfw_small.txt';
+  const status = document.getElementById('status');
+  const saveBtn = document.getElementById('save');
+  const copyBtn = document.getElementById('copy');
+  let text = null;
+
+  function clean(raw) {
+    return raw.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith('#')).join('\n') + '\n';
+  }
+  function versionDate(raw) {
+    const m = raw.match(/^# Last modified:\s*(\d{4})-(\d{2})-(\d{2})/m);
+    if (!m) return null;
+    const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+    return d.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  }
+  async function load() {
+    try {
+      const r = await fetch(SOURCE, { cache: 'no-store' });
+      if (!r.ok) throw new Error('fuente');
+      const raw = await r.text();
+      const t = clean(raw);
+      if (t.split('\n').length < 5000) throw new Error('corta');
+      const v = versionDate(raw);
+      if (v) document.getElementById('ver').textContent = v;
+      return t;
+    } catch (e) {
+      const r = await fetch('../lista-cold-turkey.txt', { cache: 'no-store' });
+      if (!r.ok) throw new Error('respaldo');
+      document.getElementById('ver').textContent = 'this site’s backup copy (updated weekly)';
+      return clean(await r.text());
+    }
+  }
+  const ready = load().then(t => {
+    text = t;
+    const n = t.split('\n').filter(Boolean).length;
+    document.getElementById('count').textContent = n.toLocaleString('en-US');
+    saveBtn.disabled = false; copyBtn.disabled = false;
+  }).catch(() => { status.textContent = 'The list could not be loaded. Please reload the page.'; });
+
+  saveBtn.addEventListener('click', async () => {
+    await ready; if (!text) return;
+    const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = 'lista-cold-turkey.txt';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    status.textContent = 'Downloaded: lista-cold-turkey.txt (look in your Downloads folder).';
+  });
+  copyBtn.addEventListener('click', async () => {
+    await ready; if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      status.textContent = 'List copied. Paste it into the block’s list of websites.';
+    } catch (e) { status.textContent = 'Could not copy. Please use the download button.'; }
+  });
+})();
+</script>
+</body>
+</html>
